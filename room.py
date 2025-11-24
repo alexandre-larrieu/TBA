@@ -1,31 +1,44 @@
-# Define the Room class.
-
 class Room:
-
-    # Define the constructor. 
+    """
+    Représente un lieu dans le jeu.
+    """
     def __init__(self, name, description):
         self.name = name
         self.description = description
         self.exits = {}
-    
-    # Define the get_exit method.
-    def get_exit(self, direction):
+        self.inventory = {}   # Dictionnaire {nom_item: objet_Item}
+        self.characters = {}  # Dictionnaire {nom_pnj: objet_Character}
 
-        # Return the room in the given direction if it exists.
-        if direction in self.exits.keys():
+    def get_exit(self, direction):
+        """Retourne la salle dans la direction donnée si elle existe."""
+        if direction in self.exits:
             return self.exits[direction]
-        else:
-            return None
-    
-    # Return a string describing the room's exits.
+        return None
+
     def get_exit_string(self):
+        """Retourne la liste des sorties sous forme de chaîne."""
         exit_string = "Sorties: " 
         for exit in self.exits.keys():
             if self.exits.get(exit) is not None:
                 exit_string += exit + ", "
-        exit_string = exit_string.strip(", ")
-        return exit_string
+        return exit_string.strip(", ")
 
-    # Return a long description of this room including exits.
+    def get_inventory_string(self):
+        """Retourne une chaine décrivant les objets et PNJ présents."""
+        output = ""
+        # Lister les objets (utilise le __str__ de la classe Item)
+        if self.inventory:
+            output += "Vous voyez ici :\n"
+            for item in self.inventory.values():
+                output += f"    - {item}\n"
+        
+        # Lister les personnages (utilise le __str__ de la classe Character)
+        if self.characters:
+            output += "Personnages présents :\n"
+            for char in self.characters.values():
+                output += f"    - {char.name}\n"
+        return output
+
     def get_long_description(self):
-        return f"\nVous êtes {self.description}\n\n{self.get_exit_string()}\n"
+        """Retourne la description complète du lieu."""
+        return f"\nVous êtes {self.description}\n{self.get_inventory_string()}\n{self.get_exit_string()}\n"
