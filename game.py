@@ -12,6 +12,7 @@ class Game:
         self.rooms = []
         self.commands = {}
         self.player = None
+        self.all_npcs = [] # Liste pour gérer les mouvements des PNJ
         self.game_states = {
             "porte_salon_ouverte": False,
             "cylian_rencontre": False,
@@ -23,36 +24,30 @@ class Game:
         # --- Commandes ---
         self.commands["help"] = Command("help", " : afficher cette aide", Actions.help, 0)
         self.commands["quit"] = Command("quit", " : quitter le jeu", Actions.quit, 0)
-        self.commands["go"] = Command("go", " <direction> : se déplacer (N, E, S, O, U, D)", Actions.go, 1)
+        # Directions en français et anglais
+        self.commands["go"] = Command("go", " <direction> : se déplacer (NORD, SUD, EST, OUEST, HAUT, BAS)", Actions.go, 1)
         self.commands["regarder"] = Command("regarder", " : observe la salle actuelle", Actions.regarder, 0)
         self.commands["inventaire"] = Command("inventaire", " : affiche votre inventaire", Actions.inventaire, 0)
-        self.commands["check"] = Command("check", " : alias pour inventaire", Actions.inventaire, 0)
         self.commands["prendre"] = Command("prendre", " <objet> : prend un objet", Actions.prendre, 1)
-        self.commands["take"] = Command("take", " : alias pour prendre", Actions.prendre, 1)
         self.commands["parler"] = Command("parler", " <personnage> : parle à un personnage", Actions.parler, 1)
-        self.commands["talk"] = Command("talk", " : alias pour parler", Actions.parler, 1)
         self.commands["utiliser"] = Command("utiliser", " <objet> : utilise un objet", Actions.utiliser, 1)
         self.commands["combiner"] = Command("combiner", " <obj1> <obj2> : fusionne deux objets (Laboratoire seulement)", Actions.combiner, 2)
+        self.commands["back"] = Command("back", " : revenir en arrière", Actions.back, 0)
+        self.commands["poser"] = Command("poser", " <objet> : poser un objet", Actions.drop, 1)
+        self.commands["historique"] = Command("historique", " : afficher le parcours", Actions.history, 0)
         
-        # --- Création des Lieux (13 salles maintenant !) ---
+        # --- Création des Lieux ---
         entree = Room("Entrée de la Grotte", "à l'entrée. Un éboulement bloque la sortie. La vision de la voyante était claire...")
         couloir = Room("Couloir Murmures", "dans un couloir étroit. Des échos étranges résonnent.")
-        
-        # NOUVEAU: Le Hub central
-        jardin = Room("Jardin des Statues", "dans une immense caverne naturelle remplie de statues de pierre... qui ressemblent étrangement à des aventuriers pétrifiés.")
-        
-        # NOUVEAU: Zone technique
+        jardin = Room("Jardin des Statues", "dans une immense caverne naturelle remplie de statues de pierre... des aventuriers pétrifiés ?")
         labo = Room("Laboratoire d'Alchimie", "dans une salle remplie de fioles et d'alambics. C'est le seul endroit stable pour faire des mélanges.")
         biblio = Room("Bibliothèque Poussiéreuse", "devant des étagères remplies de livres en décomposition.")
         armurerie = Room("Armurerie Oubliée", "dans une salle d'armes rouillées. Le sol est jonché de métal inutile.")
-
         gouffre = Room("Gouffre Sombre", "dans un cul-de-sac. Le sol est instable. En vous avançant, la pierre s'effondre derrière vous ! Vous avez PERDU.")
         cellule = Room("Cellule Humide", "dans ce qui ressemble à une ancienne prison.")
-        
-        miroir = Room("Salle du Grand Miroir", "dans une salle immense dominée par un miroir terni. Un passage étroit mène à l'OUEST.")
-        chambre = Room("Chambre de Karaba", "dans les quartiers privés de la gardienne ! C'est en désordre. Karaba est assise sur un trône.")
-        
-        devant_la_porte = Room("Devant la Porte", "Vous êtes au pied de la porte massive du Salon Sacré. Elle est verrouillée par une serrure complexe.")
+        miroir = Room("Salle du Grand Miroir", "dans une salle immense dominée par un miroir terni. Un passage étroit mène à l'OUEST, et un autre passage mène à l'EST vers une grande porte.")
+        chambre = Room("Chambre de Karaba", "dans les quartiers privés de la gardienne ! C'est en désordre. Karaba, la sorcière, est assise sur un trône d'ossements.")
+        devant_la_porte = Room("Devant la Porte", "Vous êtes au pied de la porte massive du Salon Sacré. Elle est verrouillée par une serrure complexe en forme de peigne.")
         salon = Room("Le Salon Sacré", "dans la salle de la 'fontaine'. Des étagères remplies de perruques. Au fond, une sortie vers l'air libre !")
         cabinet = Room("Cabinet du Miroir", "dans un bureau stérile et blanc. C'est... un cabinet médical ?")
 
@@ -63,18 +58,16 @@ class Game:
         dents = Item("dents", "la partie dentée du peigne", 0.2, True)
         bave = Item("bave", "une fiole visqueuse de limace", 0.5, True)
         poudre = Item("poudre", "de la vieille poudre de perruque", 0.3, True)
-        
-        # NOUVEAUX ITEMS
         livre = Item("grimoire", "un livre ouvert à la page 'Remèdes Capillaires'", 1.0, False)
-        enclume = Item("enclume", "une enclume en fer massif", 50.0, False) # Piège de poids
+        enclume = Item("enclume", "une enclume en fer massif", 50.0, False)
 
         # Placement des Items
         entree.inventory["manche"] = manche
-        armurerie.inventory["dents"] = dents # Déplacé pour forcer l'exploration
+        armurerie.inventory["dents"] = dents
         armurerie.inventory["enclume"] = enclume
         gouffre.inventory["bave"] = bave
         cellule.inventory["poudre"] = poudre
-        biblio.inventory["grimoire"] = livre # Donne l'indice de la recette
+        biblio.inventory["grimoire"] = livre
 
         # --- Création des Personnages (PNJ) ---
         homme = Character("homme", "un homme chauve recroquevillé dans le coin", cellule, 
@@ -89,36 +82,29 @@ class Game:
         docteur = Character("docteur", "un homme en blouse blanche", cabinet, 
                             ["Bonjour ! Je suis le Dr. Cheveux.", "La Turquie est belle en cette saison."])
 
+        # NOUVEAU PNJ MOBILE : Le Rat Pelé
+        rat = Character("rat", "un rat complètement chauve qui court partout", jardin, 
+                        ["Couic !", "Il grignote une perruque invisible.", "Squeek !"])
+
+        # Placement initial
         cellule.characters["homme"] = homme
         chambre.characters["karaba"] = karaba
         miroir.characters["reflet"] = reflet
         cabinet.characters["docteur"] = docteur
+        jardin.characters["rat"] = rat
 
-        # --- Création des Sorties (LE LABYRINTHE) ---
-        # L'entrée mène au couloir
+        # Liste de tous les PNJ mobiles (seul le rat bouge)
+        self.all_npcs.append(rat)
+
+        # --- Création des Sorties ---
         entree.exits =  {"N" : couloir}
-        
-        # Le couloir mène au Gouffre (O) et au Jardin (N)
         couloir.exits = {"S" : entree, "O" : gouffre, "N" : jardin}
         gouffre.exits = {} 
-
-        # LE JARDIN (Hub Central)
-        # N -> Biblio, E -> Cellule, S -> Couloir, O -> Armurerie
         jardin.exits = {"S" : couloir, "N" : biblio, "E" : cellule, "O" : armurerie}
-
-        # Armurerie (Boucle vers le couloir possible si on veut, ou cul de sac)
         armurerie.exits = {"E" : jardin}
-
-        # Bibliothèque (Mène au Labo)
         biblio.exits = {"S" : jardin, "E" : labo}
-
-        # Labo (Cul de sac, sert à crafter)
         labo.exits = {"O" : biblio}
-
-        # Cellule (Mène au Jardin et au Miroir)
         cellule.exits = {"O" : jardin, "N" : miroir}
-
-        # Zone Finale (Miroir -> Chambre/Porte)
         miroir.exits =  {"S" : cellule, "O" : chambre, "E" : devant_la_porte}
         chambre.exits = {"E" : miroir}
         devant_la_porte.exits = {"O" : miroir} 
@@ -133,6 +119,10 @@ class Game:
         self.print_welcome()
         while not self.finished:
             self.process_command(input("> "))
+            
+            # --- DÉPLACEMENT DES PNJ ---
+            for npc in self.all_npcs:
+                npc.move()
 
     def process_command(self, command_string) -> None:
         list_of_words = command_string.lower().strip().split(" ")

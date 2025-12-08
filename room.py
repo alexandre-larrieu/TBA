@@ -26,13 +26,11 @@ class Room:
     def get_inventory_string(self):
         """Retourne une chaine décrivant les objets et PNJ présents."""
         output = ""
-        # Lister les objets (utilise le __str__ de la classe Item)
         if self.inventory:
             output += "Vous voyez ici :\n"
             for item in self.inventory.values():
                 output += f"    - {item}\n"
         
-        # Lister les personnages (utilise le __str__ de la classe Character)
         if self.characters:
             output += "Personnages présents :\n"
             for char in self.characters.values():
@@ -41,4 +39,5 @@ class Room:
 
     def get_long_description(self):
         """Retourne la description complète du lieu."""
-        return f"\nVous êtes {self.description}\n{self.get_inventory_string()}\n{self.get_exit_string()}\n"
+        # Affiche le nom de la salle en titre
+        return f"\n--- {self.name.upper()} ---\nVous êtes {self.description}\n{self.get_inventory_string()}\n{self.get_exit_string()}\n"

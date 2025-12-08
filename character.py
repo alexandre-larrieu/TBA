@@ -26,5 +26,30 @@ class Character:
         return msg
     
     def move(self):
-        # Méthode optionnelle pour le futur
+        """
+        Déplace le PNJ aléatoirement dans une salle adjacente.
+        Retourne True si le déplacement a eu lieu.
+        """
+        # 1 chance sur 2 de bouger à chaque tour
+        if random.choice([True, False]):
+            exits = self.current_room.exits
+            # On récupère les sorties possibles (excluant les murs/None)
+            possible_directions = [key for key, room in exits.items() if room is not None]
+            
+            if possible_directions:
+                direction = random.choice(possible_directions)
+                next_room = exits[direction]
+                
+                # Gestion du déplacement dans les dictionnaires
+                # 1. Retirer le PNJ de la salle actuelle
+                if self.name in self.current_room.characters:
+                    del self.current_room.characters[self.name]
+                
+                # 2. Mettre à jour la salle du PNJ
+                self.current_room = next_room
+                
+                # 3. Ajouter le PNJ dans la nouvelle salle
+                next_room.characters[self.name] = self
+                
+                return True
         return False

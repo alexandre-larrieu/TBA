@@ -1,6 +1,7 @@
 class Command:
     """
-    This class represents a command. A command is composed of a command word, a help string, an action and a number of parameters.
+    Cette classe représente une commande. Une commande est composée d'un mot-clé,
+    d'un message d'aide, d'une action et d'un nombre de paramètres.
     """
 
     def __init__(self, command_word, help_string, action, number_of_parameters):

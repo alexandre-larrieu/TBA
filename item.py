@@ -1,6 +1,6 @@
 class Item:
     """
-    Représente un objet dans le jeu (Item).
+    Représente un objet dans le jeu.
     """
     def __init__(self, name, description, weight, is_mixable=False):
         self.name = name
