@@ -35,7 +35,6 @@ class Game:
         self.commands["back"] = Command("back", " : revenir en arrière", Actions.back, 0)
         self.commands["poser"] = Command("poser", " <objet> : poser un objet", Actions.drop, 1)
         self.commands["historique"] = Command("historique", " : afficher le parcours", Actions.history, 0)
-        
         # --- Création des Lieux ---
         entree = Room("Entrée de la Grotte", "à l'entrée. Un éboulement bloque la sortie. La vision de la voyante était claire...")
         couloir = Room("Couloir Murmures", "dans un couloir étroit. Des échos étranges résonnent.")
