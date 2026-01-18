@@ -1,6 +1,6 @@
 class Player():
     """
-    Représente le joueur.
+    Représente le joueur (Cricri).
     """
     def __init__(self, name):
         self.name = name
@@ -10,6 +10,7 @@ class Player():
         self.current_weight = 0.0
         self.ego = 100 
         self.history = [] 
+        self.rewards = [] # Pour les quêtes
     
     def move(self, direction):
         """Déplace le joueur vers une autre salle."""
@@ -23,16 +24,13 @@ class Player():
             print("\nAucune porte dans cette direction !\n")
             return False
         
-        # 1. On archive la salle actuelle dans l'historique AVANT de bouger
+        # 1. Sauvegarde historique
         self.history.append(self.current_room)
         
-        # 2. Gestion des suiveurs (Cylian)
         old_room = self.current_room
-        
-        # 3. Changement de salle
         self.current_room = next_room
         
-        # Déplacement des PNJ suiveurs
+        # 2. Gestion suiveur (Cylian)
         for char_name, character in list(old_room.characters.items()):
             if character.is_following:
                 del old_room.characters[char_name]
@@ -40,10 +38,7 @@ class Player():
                 character.current_room = self.current_room
                 print(f"\n({character.name} vous suit.)")
 
-        # 4. Affichage de la nouvelle salle
         print(self.current_room.get_long_description())
-        
-        # 5. Affichage de l'historique (Conformément à la consigne)
         print(self.get_history()) 
         
         return True
@@ -55,11 +50,10 @@ class Player():
             return False
             
         previous_room = self.history.pop()
-        
         old_room = self.current_room
         self.current_room = previous_room
         
-        # Gestion suiveurs retour
+        # Gestion suiveur retour
         for char_name, character in list(old_room.characters.items()):
             if character.is_following:
                 del old_room.characters[char_name]
@@ -73,16 +67,8 @@ class Player():
         return True
     
     def get_history(self):
-        """
-        Retourne une chaine de caractères représentative de l'affichage des pièces visitées.
-        Format demandé :
-        Vous avez déjà visité les pièces suivantes:
-          - description salle 1
-          - description salle 2
-        """
         if not self.history:
             return ""
-        
         output = "\nVous avez déjà visité les pièces suivantes :"
         for room in self.history:
             output += f"\n - {room.description}"
@@ -94,6 +80,11 @@ class Player():
         output = f"Votre inventaire ({self.current_weight:.1f}/{self.max_weight} kg) :\n"
         for item in self.inventory.values():
             output += f"    - {item}\n"
+        
+        if self.rewards:
+            output += "\nRécompenses de quêtes :\n"
+            for reward in self.rewards:
+                output += f"    🏆 {reward}\n"
         return output
 
     def damage_ego(self, amount, reason):
@@ -105,3 +96,7 @@ class Player():
             print("GAME OVER (Dépression Capillaire)")
             return False 
         return True
+
+    def add_reward(self, reward):
+        self.rewards.append(reward)
+        print(f"Vous avez reçu : {reward} !")

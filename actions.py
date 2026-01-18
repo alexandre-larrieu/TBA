@@ -11,7 +11,8 @@ class Actions:
         l = len(list_of_words)
         if l != number_of_parameters + 1:
             command_word = list_of_words[0]
-            if " ".join(list_of_words[1:]).upper() in ["MIROIR", "PORTE"]: pass 
+            if " ".join(list_of_words[1:]).upper() in ["MIROIR", "PORTE"]: 
+                pass 
             else:
                 print(MSG1.format(command_word=command_word))
                 return False
@@ -46,11 +47,13 @@ class Actions:
 
         move_success = player.move(direction)
         
+        # TRIGGER QUÊTE
+        if move_success:
+            game.quest_manager.check_room_objectives(player.current_room.name)
+
         if move_success and player.current_room.name == "Le Salon Sacré":
-            print("\n--- FÉLICITATIONS ! ---")
-            print("Vous avez atteint la salle des perruques !")
-            print(f"Vous : 'Ça farte ?'")
-            game.finished = True 
+            print("\n--- SALLE FINALE ATTEINTE ---")
+        
         return move_success
 
     def back(game, list_of_words, number_of_parameters):
@@ -58,6 +61,10 @@ class Actions:
 
     def history(game, list_of_words, number_of_parameters):
         print(game.player.get_history())
+        return True
+
+    def show_quests(game, list_of_words, number_of_parameters):
+        game.quest_manager.show_quests()
         return True
 
     def quit(game, list_of_words, number_of_parameters):
@@ -103,6 +110,9 @@ class Actions:
             player.current_weight += item.weight
             print(f"\nVous avez pris : {item.name}.")
             
+            # TRIGGER QUÊTE ITEM
+            game.quest_manager.check_action_objectives("prendre", item_name)
+
             if item_name == "peigne" and room.name == "Couloir Murmures":
                 room.description = "dans un couloir étroit."
             print(room.get_long_description())
@@ -152,6 +162,12 @@ class Actions:
             player.current_weight -= 0.4
             player.inventory["peigne"] = Item("peigne", "un peigne réparé", 0.4)
             player.current_weight += 0.4
+            
+            # --- TRIGGER QUÊTE : CRAFTING ---
+            # On valide la quête "Réparez le peigne"
+            game.quest_manager.check_action_objectives("réparer", "peigne")
+            # --------------------------------
+            
             return True
 
         elif items_set == {"bave", "poudre"}:
@@ -179,15 +195,19 @@ class Actions:
         
         character = room.characters[char_name]
         
-        # Rats
+        # TRIGGER QUÊTE INTERACTION
+        game.quest_manager.check_action_objectives("parler", char_name)
+
         if char_name == "rat" or char_name == "surmulot":
              print(f"\n{character.name.upper()} : {character.get_msg()}")
-             print("Vous vous sentez ridicule de parler à un rat...")
-             if not player.damage_ego(10, "Parler aux animaux"):
-                 game.finished = True
+             if game.game_states["rat_apprivoise"]:
+                 print("Le rat vous regarde avec gratitude.")
+             else:
+                 print("Vous vous sentez ridicule de parler à un rat...")
+                 if not player.damage_ego(10, "Parler aux animaux"):
+                     game.finished = True
              return True
 
-        # Cylian
         if char_name == "homme" and room.name == "Cellule Humide":
             if not game.game_states["cylian_rencontre"]:
                 print("\n(L'homme se révèle être Cylian, votre père !)")
@@ -207,7 +227,6 @@ class Actions:
             else:
                 print(f"\n{character.name.upper()} : {character.get_msg()}")
 
-        # Karaba
         elif char_name == "karaba":
             if game.game_states["cylian_sacrifie"]:
                 print("\nKARABA : 'Pars.'")
@@ -250,6 +269,21 @@ class Actions:
             print(f"\nPas de '{item_name}'.")
             return False
             
+        if item_name == "fromage":
+            rat_present = "rat" in room.characters or "surmulot" in room.characters
+            if rat_present:
+                print("\nVous donnez le fromage au rongeur.")
+                print("Il le dévore instantanément.")
+                player.ego = min(100, player.ego + 20)
+                del player.inventory["fromage"]
+                player.current_weight -= 0.1
+                game.game_states["rat_apprivoise"] = True
+                game.quest_manager.check_action_objectives("utiliser", "fromage")
+                return True
+            else:
+                print("\nIl n'y a personne qui veut de ce fromage ici.")
+                return False
+
         if item_name == "peigne" and room.name == "Devant la Porte":
             if not game.game_states["peigne_insere"]:
                 game.game_states["peigne_insere"] = True
