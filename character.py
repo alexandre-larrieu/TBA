@@ -8,15 +8,14 @@ class Character:
         self.name = name
         self.description = description
         self.current_room = current_room
-        self.msgs = msgs # Liste de messages
+        self.msgs = msgs 
+        self.is_following = False # NOUVEAU : Par défaut, il ne suit pas
 
     def __str__(self):
         return f"{self.name} : {self.description}"
 
     def get_msg(self):
-        """
-        Retourne le prochain message du PNJ de façon cyclique.
-        """
+        """Retourne le prochain message du PNJ de façon cyclique."""
         if not self.msgs:
             return "Il n'a rien à dire."
         
@@ -30,6 +29,10 @@ class Character:
         Déplace le PNJ aléatoirement dans une salle adjacente.
         Retourne True si le déplacement a eu lieu.
         """
+        # Si le personnage suit le joueur, il ne bouge pas tout seul !
+        if self.is_following:
+            return False
+
         # 1 chance sur 2 de bouger à chaque tour
         if random.choice([True, False]):
             exits = self.current_room.exits
