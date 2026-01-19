@@ -1,174 +1,318 @@
-from room import Room
-from player import Player
-from command import Command
-from actions import Actions
 from item import Item
 from character import Character
-from quest import Quest, QuestManager
 
-class Game:
+MSG0 = "\nLa commande '{command_word}' ne prend pas de paramètre.\n"
+MSG1 = "\nLa commande '{command_word}' prend 1 seul paramètre.\n"
 
-    def __init__(self):
-        self.finished = False
-        self.rooms = []
-        self.commands = {}
-        self.player = None
-        self.all_npcs = [] 
-        self.quest_manager = None
-        self.game_states = {
-            "porte_salon_ouverte": False,
-            "cylian_rencontre": False,
-            "peigne_insere": False,
-            "cylian_sacrifie": False,
-            "rat_apprivoise": False
+class Actions:
+
+    def go(game, list_of_words, number_of_parameters):
+        player = game.player
+        l = len(list_of_words)
+        if l != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            # Gestion des "faux" paramètres (ex: go porte) qui sont en fait des directions
+            if " ".join(list_of_words[1:]).upper() in ["MIROIR", "PORTE"]:
+                pass
+            else:
+                print(MSG1.format(command_word=command_word))
+                return False
+       
+        raw_direction = " ".join(list_of_words[1:]).upper()
+        direction_mapping = {
+            "NORD": "N", "N": "N", "SUD": "S", "S": "S", "EST": "E", "E": "E",
+            "OUEST": "O", "O": "O", "HAUT": "H", "MONTER": "H", "H": "H", "BAS": "B", "DESCENDRE": "B", "B": "B"
         }
-    
-    def setup(self):
-        self.commands["help"] = Command("help", " : aide", Actions.help, 0)
-        self.commands["quit"] = Command("quit", " : quitter", Actions.quit, 0)
-        self.commands["go"] = Command("go", " <dir> : bouger (N, S, E, O, H, B)", Actions.go, 1)
-        self.commands["regarder"] = Command("regarder", " : voir", Actions.regarder, 0)
-        self.commands["inventaire"] = Command("inventaire", " : inventaire", Actions.inventaire, 0)
-        self.commands["prendre"] = Command("prendre", " <obj> : prendre", Actions.prendre, 1)
-        self.commands["parler"] = Command("parler", " <pnj> : parler", Actions.parler, 1)
-        self.commands["utiliser"] = Command("utiliser", " <obj> : utiliser", Actions.utiliser, 1)
-        self.commands["combiner"] = Command("combiner", " <obj1> <obj2> : mixer", Actions.combiner, 2)
-        self.commands["back"] = Command("back", " : retour", Actions.back, 0)
-        self.commands["poser"] = Command("poser", " <obj> : poser", Actions.drop, 1)
-        self.commands["historique"] = Command("historique", " : historique", Actions.history, 0)
-        self.commands["quetes"] = Command("quetes", " : liste des quêtes", Actions.show_quests, 0)
-        
-        # --- LIEUX ---
-        entree = Room("Entrée de la Grotte", "à l'entrée.")
-        couloir = Room("Couloir Murmures", "dans un couloir étroit.")
-        jardin = Room("Jardin des Statues", "dans une caverne avec des statues.")
-        labo = Room("Laboratoire d'Alchimie", "dans un labo.")
-        biblio = Room("Bibliothèque Poussiéreuse", "devant des livres.")
-        grenier = Room("Grenier Sombre", "dans un petit grenier poussiéreux au-dessus de la bibliothèque.")
-        armurerie = Room("Armurerie Oubliée", "dans une salle d'armes.")
-        gouffre = Room("Gouffre Sombre", "devant un trou.")
-        cellule = Room("Cellule Humide", "dans une prison.")
-        egouts = Room("Égouts Puants", "dans des égouts humides et malodorants qui passent sous la prison.")
-        miroir = Room("Salle du Grand Miroir", "devant un miroir.")
-        chambre = Room("Chambre de Karaba", "chez la sorcière.")
-        devant_la_porte = Room("Devant la Porte", "devant la porte finale.")
-        salon = Room("Le Salon Sacré", "Gagné !")
-        cabinet = Room("Cabinet du Miroir", "chez le docteur.")
+        direction = direction_mapping.get(raw_direction, raw_direction)
 
-        self.rooms = [entree, couloir, jardin, labo, biblio, grenier, armurerie, gouffre, cellule, egouts, miroir, chambre, devant_la_porte, salon, cabinet]
+        if player.current_room.name == "Gouffre Sombre":
+            print("\nVous essayez de bouger, mais les murs sont lisses. Vous avez PERDU.")
+            return False
 
-        # --- ITEMS ---
-        entree.inventory["manche"] = Item("manche", "manche ivoire", 0.2, True)
-        armurerie.inventory["dents"] = Item("dents", "dents peigne", 0.2, True)
-        armurerie.inventory["enclume"] = Item("enclume", "lourd", 50.0, False)
-        gouffre.inventory["bave"] = Item("bave", "bave limace", 0.5, True)
-        cellule.inventory["poudre"] = Item("poudre", "poudre perruque", 0.3, True)
-        biblio.inventory["grimoire"] = Item("grimoire", "recette", 1.0, False)
-        grenier.inventory["fromage"] = Item("fromage", "un vieux bout de camembert", 0.1, False)
+        if player.current_room.name == "Devant la Porte" and (direction == "E" or direction == "PORTE"):
+            if not game.game_states["porte_salon_ouverte"]:
+                print("\nLa porte massive est fermement verrouillée.")
+                print("INDICE : Il y a une serrure en forme de peigne et des gonds rouillés.")
+                player.damage_ego(5, "Porte fermée")
+                return False
+            else:
+                if direction == "E":
+                    print("\nLa porte est ouverte, tapez 'go porte'.")
+                    return False
+       
+        if player.current_room.name == "Cabinet du Miroir" and direction == "MIROIR":
+            # Retour depuis le cabinet vers la salle du miroir
+            salle_miroir = next(r for r in game.rooms if r.name == "Salle du Grand Miroir")
+            player.current_room = salle_miroir
+            print(player.current_room.get_long_description())
+            print(player.get_history())
+            return True
 
-        # --- PNJ ---
-        homme = Character("homme", "un homme peureux", cellule, ["Qui est là ?"])
-        karaba = Character("karaba", "la sorcière", chambre, ["Déguerpis."])
-        reflet = Character("reflet", "votre reflet", miroir, ["Bonjour."])
-        docteur = Character("docteur", "le docteur", cabinet, ["Bonjour !"])
-        rat = Character("rat", "un rat", jardin, ["Couic !"])
-        surmulot = Character("surmulot", "un surmulot", gouffre, ["Squeek !"])
+        move_success = player.move(direction)
+       
+        # TRIGGER QUÊTE
+        if move_success:
+            game.quest_manager.check_room_objectives(player.current_room.name)
 
-        cellule.characters["homme"] = homme
-        chambre.characters["karaba"] = karaba
-        miroir.characters["reflet"] = reflet
-        cabinet.characters["docteur"] = docteur
-        jardin.characters["rat"] = rat
-        gouffre.characters["surmulot"] = surmulot
+        if move_success and player.current_room.name == "Le Salon Sacré":
+            print("\n--- SALLE FINALE ATTEINTE ---")
+       
+        return move_success
 
-        self.all_npcs.append(rat)
-        self.all_npcs.append(surmulot)
+    def back(game, list_of_words, number_of_parameters):
+        return game.player.go_back()
 
-        # --- SORTIES ---
-        entree.exits =  {"N" : couloir}
-        couloir.exits = {"S" : entree, "O" : gouffre, "N" : jardin}
-        gouffre.exits = {} 
-        jardin.exits = {"S" : couloir, "N" : biblio, "E" : cellule, "O" : armurerie}
-        armurerie.exits = {"E" : jardin}
-        
-        biblio.exits = {"S" : jardin, "E" : labo, "H" : grenier}
-        grenier.exits = {"B" : biblio}
-        
-        labo.exits = {"O" : biblio}
-        
-        cellule.exits = {"O" : jardin, "N" : miroir, "B" : egouts}
-        egouts.exits = {"H" : cellule, "E" : miroir}
-        
-        miroir.exits =  {"S" : cellule, "O" : chambre, "E" : devant_la_porte} 
-        chambre.exits = {"E" : miroir}
-        devant_la_porte.exits = {"O" : miroir} 
-        salon.exits =   {"O" : devant_la_porte} 
+    def history(game, list_of_words, number_of_parameters):
+        print(game.player.get_history())
+        return True
 
-        self.player = Player(input("\nEntrez votre nom (ex: Cricri): "))
-        self.player.current_room = entree 
+    def show_quests(game, list_of_words, number_of_parameters):
+        game.quest_manager.show_quests()
+        return True
 
-        # --- QUÊTES ---
-        self.quest_manager = QuestManager(self.player)
-        
-        # --- MODIFICATION ICI : Quête 1 changée ---
-        # L'objectif est maintenant "réparer le peigne" (déclenché dans actions.combiner)
-        q1 = Quest("Débutant", "Réparez le peigne cassé.", ["réparer le peigne"], "Confiance")
-        self.quest_manager.add_quest(q1)
-        
-        q2 = Quest("Famille", "Retrouvez votre père.", ["parler homme"], "Souvenirs")
-        self.quest_manager.add_quest(q2)
-        
-        q3 = Quest("Victoire", "Entrez dans le Salon Sacré.", ["Visiter Le Salon Sacré"], "Cheveux soyeux")
-        self.quest_manager.add_quest(q3)
+    def quit(game, list_of_words, number_of_parameters):
+        print(f"\nMerci {game.player.name} d'avoir joué. Au revoir.")
+        game.finished = True
+        return True
 
-        q4 = Quest("Ami des bêtes", "Donnez du fromage au rat.", ["utiliser fromage"], "Respect du rongeur")
-        self.quest_manager.add_quest(q4)
+    def help(game, list_of_words, number_of_parameters):
+        print("\n--- AIDE DU JEU ---")
+        print("But : Résolvez les quêtes pour entrer dans le Salon Sacré.")
+        print("Commandes essentielles :")
+        print("  - go [N/S/E/O/H/B] : Se déplacer.")
+        print("  - regarder : Voir la description de la salle et les indices.")
+        print("  - inventaire : Voir vos objets.")
+        print("  - prendre [objet] : Ramasser un objet.")
+        print("  - combiner [obj1] [obj2] : Créer un nouvel objet (Seulement au Labo !).")
+        print("  - utiliser [objet] : Activer un objet (ex: clé, fromage).")
+        print("  - parler [pnj] : Discuter avec un personnage.")
+        return True
 
-        self.quest_manager.activate_quest("Débutant")
-        self.quest_manager.activate_quest("Famille")
-        self.quest_manager.activate_quest("Victoire")
-        self.quest_manager.activate_quest("Ami des bêtes")
+    def regarder(game, list_of_words, number_of_parameters):
+        print(game.player.current_room.get_long_description())
+        return True
 
-    def play(self):
-        self.setup()
-        self.print_welcome()
-        while not self.finished:
-            self.process_command(input("> "))
-            for npc in self.all_npcs:
-                npc.move()
-            self.check_win()
+    def inventaire(game, list_of_words, number_of_parameters):
+        print(game.player.get_inventory_str())
+        return True
 
-    def process_command(self, command_string):
-        list_of_words = command_string.lower().strip().split(" ")
-        if not list_of_words or list_of_words[0] == "":
-            if self.player.current_room.name == "Gouffre Sombre":
-                 print("\nVous êtes piégé.")
-            return
-        command_word = list_of_words[0]
-        if command_word in self.commands:
-            command = self.commands[command_word]
-            command.action(self, list_of_words, command.number_of_parameters)
+    def prendre(game, list_of_words, number_of_parameters):
+        player = game.player
+        room = player.current_room
+        if len(list_of_words) < 2:
+            print(f"\nPrécisez l'objet à prendre.")
+            return False
+        item_name = " ".join(list_of_words[1:])
+       
+        if item_name == "crème capillaire":
+            print("\nVous ne pouvez pas 'prendre' cet objet directement. Karaba doit vous le donner.")
+            return False
+       
+        if item_name in room.inventory:
+            item = room.inventory[item_name]
+            if player.current_weight + item.weight > player.max_weight:
+                print(f"\nCet objet est trop lourd !")
+                player.damage_ego(10, "Lumbago")
+                return False
+
+            del room.inventory[item_name]
+            player.inventory[item_name] = item
+            player.current_weight += item.weight
+            print(f"\nVous avez pris : {item.name}.")
+           
+            # TRIGGER QUÊTE ITEM
+            game.quest_manager.check_action_objectives("prendre", item_name)
+
+            if item_name == "peigne" and room.name == "Couloir Murmures":
+                room.description = "dans un couloir étroit."
+            print(room.get_long_description())
+            return True
         else:
-            print(f"\nCommande inconnue.")
-            Actions.help(self, ["help"], 0)
+            print(f"\nIl n'y a pas d'objet '{item_name}' ici.")
+            return False
 
-    def check_win(self):
-        required_quests = ["Débutant", "Famille", "Victoire"]
-        all_completed = True
-        
-        for q_title in required_quests:
-            quest = self.quest_manager.get_quest_by_title(q_title)
-            if quest and not quest.is_completed:
-                all_completed = False
-        
-        if all_completed and not self.finished:
-            print("\n🎉 VICTOIRE ! VOUS AVEZ DES CHEVEUX MAGNIFIQUES ! 🎉")
-            self.finished = True
+    def drop(game, list_of_words, number_of_parameters):
+        player = game.player
+        room = player.current_room
+        if len(list_of_words) < 2: return False
+        item_name = " ".join(list_of_words[1:])
+       
+        if item_name in player.inventory:
+            item = player.inventory[item_name]
+            del player.inventory[item_name]
+            player.current_weight -= item.weight
+            room.inventory[item_name] = item
+            print(f"\nVous avez posé : {item.name}.")
+            print(room.get_long_description())
+            return True
+        else:
+            print(f"\nVous n'avez pas ça.")
+            return False
 
-    def print_welcome(self):
-        print(f"\n--- Bienvenue {self.player.name} ---")
-        Actions.help(self, ["help"], 0)
-        print(self.player.current_room.get_long_description())
+    def combiner(game, list_of_words, number_of_parameters):
+        player = game.player
+        # Vérification du lieu (Aide contextuelle)
+        if player.current_room.name != "Laboratoire d'Alchimie":
+            print("\n❌ Impossible de combiner ici !")
+            print("💡 INDICE : Vous devez trouver le 'Laboratoire d'Alchimie' pour faire cela.")
+            return False
 
-if __name__ == "__main__":
-    Game().play()
+        if len(list_of_words) < 3:
+            print("\n❌ Commande incomplète.")
+            print("💡 Usage : combiner [objet1] [objet2]")
+            return False
+           
+        item1_name = list_of_words[1]
+        item2_name = list_of_words[2]
+       
+        if item1_name not in player.inventory or item2_name not in player.inventory:
+            print("\nIl vous manque des objets dans votre inventaire.")
+            return False
+           
+        items_set = {item1_name, item2_name}
+       
+        if items_set == {"manche", "dents"}:
+            print("\n✨ SUCCÈS : Vous assemblez le peigne.")
+            del player.inventory["manche"]
+            del player.inventory["dents"]
+            player.current_weight -= 0.4
+            player.inventory["peigne"] = Item("peigne", "un peigne réparé (Clé)", 0.4)
+            player.current_weight += 0.4
+           
+            # --- TRIGGER QUÊTE : CRAFTING ---
+            game.quest_manager.check_action_objectives("réparer", "peigne")
+            return True
+
+        elif items_set == {"bave", "poudre"}:
+            print("\n✨ SUCCÈS : Vous créez un onguent.")
+            del player.inventory["bave"]
+            del player.inventory["poudre"]
+            player.current_weight -= 0.8
+            player.inventory["onguent brut"] = Item("onguent brut", "pâte grise pour Karaba", 0.8)
+            player.current_weight += 0.8
+            return True
+        else:
+            print("\nÇa explose ! Ces objets ne vont pas ensemble.")
+            player.damage_ego(20, "Boom")
+            return False
+
+    def parler(game, list_of_words, number_of_parameters):
+        player = game.player
+        room = player.current_room
+        if len(list_of_words) < 2: return False
+        char_name = " ".join(list_of_words[1:])
+       
+        if char_name not in room.characters:
+            print(f"\nPersonne nommé '{char_name}' ici.")
+            return False
+       
+        character = room.characters[char_name]
+       
+        # TRIGGER QUÊTE INTERACTION
+        game.quest_manager.check_action_objectives("parler", char_name)
+
+        if char_name == "rat" or char_name == "surmulot":
+             print(f"\n{character.name.upper()} : {character.get_msg()}")
+             if game.game_states["rat_apprivoise"]:
+                 print("Le rat vous regarde avec gratitude.")
+             else:
+                 print("Vous vous sentez ridicule de parler à un rat...")
+                 if not player.damage_ego(10, "Parler aux animaux"):
+                     game.finished = True
+             return True
+
+        if char_name == "homme" and room.name == "Cellule Humide":
+            if not game.game_states["cylian_rencontre"]:
+                print("\n(L'homme se révèle être Cylian, votre père !)")
+                game.game_states["cylian_rencontre"] = True
+                del room.characters["homme"]
+                cylian_char = Character("cylian", "votre père", room, ["Continuons...", "Négocions avec Karaba."])
+                room.characters["cylian"] = cylian_char
+                room.description = "dans une ancienne prison."
+                print("\nCYLIAN : 'Veux-tu que je vienne avec toi ?' (oui/non)")
+                reponse = input("> ").lower()
+                if reponse == "oui":
+                    cylian_char.is_following = True
+                    print("\nCYLIAN : 'Je te suis.'")
+                else:
+                    cylian_char.is_following = False
+                    print("\nCYLIAN : 'Je reste ici.'")
+            else:
+                print(f"\n{character.name.upper()} : {character.get_msg()}")
+
+        elif char_name == "karaba":
+            if game.game_states["cylian_sacrifie"]:
+                print("\nKARABA : 'Pars.'")
+                return True
+            if not game.game_states["cylian_rencontre"]:
+                print(f"\n{character.name.upper()} : {character.get_msg()}")
+                return True
+           
+            cylian_present = False
+            if "cylian" in room.characters: cylian_present = True
+           
+            if "onguent brut" in player.inventory and cylian_present:
+                print("\nKARABA : 'Je prends l'onguent et ton père.'")
+                game.game_states["cylian_sacrifie"] = True
+                del player.inventory["onguent brut"]
+                player.current_weight -= 0.8
+                player.inventory["crème capillaire"] = Item("crème capillaire", "magique", 1.2)
+                player.current_weight += 1.2
+                if "cylian" in room.characters:
+                    cylian = room.characters["cylian"]
+                    cylian.is_following = False
+                    cylian.description = "prisonnier"
+                print("(Vous obtenez la Crème.)")
+            elif "onguent brut" in player.inventory and not cylian_present:
+                 print("\nKARABA : 'Il me faut une âme en plus...' (Amenez votre père)")
+            else:
+                print("\nKARABA : 'Apporte-moi un onguent (Bave + Poudre) !'")
+
+        else:
+            print(f"\n{character.name.upper()} : {character.get_msg()}")
+        return True
+
+    def utiliser(game, list_of_words, number_of_parameters):
+        player = game.player
+        room = player.current_room
+        if len(list_of_words) < 2: return False
+        item_name = " ".join(list_of_words[1:])
+       
+        if item_name not in player.inventory:
+            print(f"\nPas de '{item_name}'.")
+            return False
+           
+        if item_name == "fromage":
+            rat_present = "rat" in room.characters or "surmulot" in room.characters
+            if rat_present:
+                print("\nVous donnez le fromage au rongeur.")
+                print("Il le dévore instantanément.")
+                player.ego = min(100, player.ego + 20)
+                del player.inventory["fromage"]
+                player.current_weight -= 0.1
+                game.game_states["rat_apprivoise"] = True
+                game.quest_manager.check_action_objectives("utiliser", "fromage")
+                return True
+            else:
+                print("\nIl n'y a personne qui veut de ce fromage ici.")
+                return False
+
+        if item_name == "peigne" and room.name == "Devant la Porte":
+            if not game.game_states["peigne_insere"]:
+                game.game_states["peigne_insere"] = True
+                del player.inventory["peigne"]
+                player.current_weight -= 0.4
+                print("\nPeigne inséré dans la serrure.")
+            else: print("\nDéjà fait.")
+
+        elif item_name == "crème capillaire" and room.name == "Devant la Porte":
+            if game.game_states["peigne_insere"]:
+                game.game_states["porte_salon_ouverte"] = True
+                del player.inventory["crème capillaire"]
+                player.current_weight -= 1.2
+                print("\nLa porte s'ouvre !")
+                salon = next(r for r in game.rooms if r.name == "Le Salon Sacré")
+                room.exits["PORTE"] = salon
+            else: print("\nIl manque le peigne dans la serrure.")
+        else: print("Rien ne se passe ici avec cet objet.")
+        return True
