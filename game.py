@@ -378,12 +378,29 @@ class GameGUI(tk.Tk):
                 image_path = potential_path
 
         try:
-            self._image_ref = tk.PhotoImage(file=str(image_path))
+            # Charger l'image brute
+            temp_image = tk.PhotoImage(file=str(image_path))
+           
+            # Calculer si on doit rétrécir l'image (Zoom Out)
+            # Si l'image fait 1200px et l'écran 600px, on divise par 2 (facteur = 2)
+            w_factor = temp_image.width() // self.IMAGE_WIDTH
+            h_factor = temp_image.height() // self.IMAGE_HEIGHT
+            factor = max(w_factor, h_factor) # On garde le plus grand facteur de réduction
+
+            if factor > 1:
+                # On réduit l'image (subsample divise la taille)
+                self._image_ref = temp_image.subsample(factor)
+            else:
+                self._image_ref = temp_image
+
+            # Afficher l'image
             self.canvas.delete("all")
+            # On centre l'image dans le cadre (300, 200 est le centre de 600x400)
             self.canvas.create_image(self.IMAGE_WIDTH/2, self.IMAGE_HEIGHT/2, image=self._image_ref)
-        except Exception:
+           
+        except Exception as e:
+            print(f"Erreur chargement image: {e}")
             self.canvas.delete("all")
-            # Fallback textuel dans le canvas si l'image de la salle manque aussi
             self.canvas.create_text(self.IMAGE_WIDTH/2, self.IMAGE_HEIGHT/2, text=f"Lieu : {room.name}", fill="white", font=("Helvetica", 18))
             self.canvas.create_text(self.IMAGE_WIDTH/2, self.IMAGE_HEIGHT/2 + 30, text="(Image non trouvée)", fill="gray", font=("Helvetica", 10))
 
