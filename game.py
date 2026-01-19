@@ -58,92 +58,73 @@ class Game:
         self.commands["quetes"] = Command("quetes", " : liste des quêtes", Actions.show_quests, 0)
 
     def _setup_world(self, player_name):
-        # --- LIEUX (Avec Indices Intégrés pour jeu autonome) ---
+        # --- LIEUX (Avec IMAGES UNIQUES pour chaque salle) ---
        
-        # Entrée : Tutoriel de base
         entree = Room("Entrée de la Grotte",
                       "à l'entrée de la caverne.\nASTUCE : Tapez 'regarder' pour voir les objets et 'prendre [nom_objet]' pour les ramasser.\nVous voyez un passage vers le Nord.",
-                      "forest.png")
+                      "entree.png")
        
-        # Couloir : Indication de direction
         couloir = Room("Couloir Murmures",
                        "dans un couloir sombre. Vous entendez des bruits de rongeurs.\nASTUCE : Tapez 'go [direction]' (ex: 'go N') pour bouger.",
-                       "cave.png")
+                       "couloir.png")
        
-        # Jardin : Carrefour
         jardin = Room("Jardin des Statues",
                       "dans une vaste caverne ornée de statues étranges. Plusieurs chemins s'offrent à vous.",
-                      "forest.png")
+                      "jardin.png")
        
-        # Labo : Tuto Crafting
         labo = Room("Laboratoire d'Alchimie",
                     "dans un laboratoire rempli de fioles.\n★ TUTO CRAFT : Ici, vous pouvez utiliser la commande 'combiner [obj1] [obj2]'.\nPar exemple pour réparer un objet ou créer une potion.",
-                    "cottage.png")
+                    "labo.png")
        
-        # Biblio : Renferme la "Recette"
         biblio = Room("Bibliothèque Poussiéreuse",
                       "entouré de vieux livres. L'un d'eux semble contenir des recettes importantes.",
-                      "castle.png")
+                      "biblio.png")
        
-        # Grenier : Indice pour le rat
         grenier = Room("Grenier Sombre",
                        "dans un petit grenier qui sent le vieux fromage. Idéal pour trouver de la nourriture pour animaux.",
-                       "cottage.png")
+                       "grenier.png")
        
-        # Armurerie : Indice objets
         armurerie = Room("Armurerie Oubliée",
                          "dans une salle d'armes en ruine. Il y a beaucoup de débris métalliques au sol.",
-                         "castle.png")
+                         "armurerie.png")
        
-        # Gouffre : Avertissement
         gouffre = Room("Gouffre Sombre",
                        "au bord d'un précipice sans fin. Ne tombez pas !",
-                       "swamp.png")
+                       "gouffre.png")
        
-        # Cellule : Indice PNJ
         cellule = Room("Cellule Humide",
                        "devant une grille de prison. Quelqu'un semble enfermé à l'intérieur.\nASTUCE : Utilisez 'parler [nom]' pour interagir.",
-                       "cave.png")
+                       "cellule.png")
        
-        # Égouts
         egouts = Room("Égouts Puants",
                       "dans des égouts humides et malodorants.",
-                      "swamp.png")
+                      "egouts.png")
        
-        # Miroir
         miroir = Room("Salle du Grand Miroir",
                       "face à un immense miroir magique qui semble vibrer. Il cache peut-être un passage secret...",
-                      "tower.png")
+                      "miroir.png")
        
-        # Chambre Karaba
         chambre = Room("Chambre de Karaba",
                        "dans l'antre de la sorcière. Elle n'a pas l'air commode. Préparez-vous à négocier.",
-                       "tower.png")
+                       "chambre.png")
        
-        # Porte Finale : Instructions de victoire
         devant_la_porte = Room("Devant la Porte",
                                "devant la Porte Sacrée du Salon.\n⚠️ OBJECTIF FINAL :\n1. Insérez un 'peigne' réparé (commande: utiliser peigne).\n2. Graissez les gonds avec de la 'crème capillaire' (commande: utiliser crème capillaire).",
-                               "castle.png")
+                               "porte.png")
        
-        salon = Room("Le Salon Sacré", "dans le Salon Sacré ! Vos cheveux repoussent instantanément. VICTOIRE !", "forest.png")
+        salon = Room("Le Salon Sacré", "dans le Salon Sacré ! Vos cheveux repoussent instantanément. VICTOIRE !", "salon.png")
        
-        cabinet = Room("Cabinet du Miroir", "dans une pièce cachée derrière le miroir. Un docteur étrange vous observe.", "cottage.png")
+        cabinet = Room("Cabinet du Miroir", "dans une pièce cachée derrière le miroir. Un docteur étrange vous observe.", "cabinet.png")
 
         self.rooms = [entree, couloir, jardin, labo, biblio, grenier, armurerie, gouffre, cellule, egouts, miroir, chambre, devant_la_porte, salon, cabinet]
 
-        # --- ITEMS (Descriptions explicites) ---
-        entree.inventory["manche"] = Item("manche", "un manche en ivoire (partie 1/2 d'un peigne). À combiner avec des dents.", 0.2, True)
-       
-        armurerie.inventory["dents"] = Item("dents", "des dents en or (partie 2/2 d'un peigne). À combiner avec un manche.", 0.2, True)
+        # --- ITEMS ---
+        entree.inventory["manche"] = Item("manche", "un manche en ivoire (partie 1/2 du peigne).", 0.2, True)
+        armurerie.inventory["dents"] = Item("dents", "des dents en or (partie 2/2 du peigne).", 0.2, True)
         armurerie.inventory["enclume"] = Item("enclume", "une enclume très lourde. Impossible à prendre.", 50.0, False)
-       
         gouffre.inventory["bave"] = Item("bave", "de la bave de limace visqueuse (Ingrédient A).", 0.5, True)
-       
         cellule.inventory["poudre"] = Item("poudre", "de la poudre de perruque ancienne (Ingrédient B).", 0.3, True)
-       
-        # LE GRIMOIRE EST LA CLÉ DU JEU POUR LE JOUEUR SANS DOC
         biblio.inventory["grimoire"] = Item("grimoire", "LIVRE DE RECETTES :\n\t- Réparation : Combiner 'manche' + 'dents' = Peigne.\n\t- Alchimie : Combiner 'bave' + 'poudre' = Onguent.", 1.0, False)
-       
         grenier.inventory["fromage"] = Item("fromage", "un camembert puant. Les rats en raffolent !", 0.1, False)
 
         # --- PNJ ---
@@ -186,18 +167,14 @@ class Game:
         self.player = Player(player_name)
         self.player.current_room = entree
 
-        # --- QUÊTES (Descriptions claires) ---
+        # --- QUÊTES ---
         self.quest_manager = QuestManager(self.player)
-       
         q1 = Quest("Débutant", "Trouvez 'manche' et 'dents', puis allez au Labo et tapez 'combiner manche dents'.", ["réparer le peigne"], "Confiance")
         self.quest_manager.add_quest(q1)
-       
         q2 = Quest("Famille", "Allez à la Cellule (Est du Jardin) et parlez à l'homme.", ["parler homme"], "Souvenirs")
         self.quest_manager.add_quest(q2)
-       
         q3 = Quest("Victoire", "Ouvrez la porte finale avec le Peigne et la Crème.", ["Visiter Le Salon Sacré"], "Cheveux soyeux")
         self.quest_manager.add_quest(q3)
-       
         q4 = Quest("Ami des bêtes", "Trouvez du fromage au Grenier et utilisez-le sur le Rat.", ["utiliser fromage"], "Respect du rongeur")
         self.quest_manager.add_quest(q4)
 
@@ -206,7 +183,6 @@ class Game:
         self.quest_manager.activate_quest("Victoire")
         self.quest_manager.activate_quest("Ami des bêtes")
 
-    # Play the game (CLI mode)
     def play(self):
         self.setup()
         self.print_welcome()
@@ -214,7 +190,6 @@ class Game:
             self.process_command(input("> "))
             self._on_turn_end()
 
-    # Process the command
     def process_command(self, command_string) -> None:
         list_of_words = command_string.split(" ")
         command_word = list_of_words[0]
@@ -225,7 +200,6 @@ class Game:
             command = self.commands[command_word]
             command.action(self, list_of_words, command.number_of_parameters)
 
-    # NOUVEAU : Logique de fin de tour (bouger les NPC, check win) centralisée
     def _on_turn_end(self):
         for npc in self.all_npcs:
             npc.move()
@@ -256,20 +230,16 @@ class Game:
 ##############################
 
 class _StdoutRedirector:
-    """Redirect sys.stdout writes into a Tkinter Text widget."""
     def __init__(self, text_widget):
         self.text_widget = text_widget
-
     def write(self, msg):
         if msg:
             self.text_widget.configure(state="normal")
             self.text_widget.insert("end", msg)
             self.text_widget.see("end")
             self.text_widget.configure(state="disabled")
-
     def flush(self):
         pass
-
 
 class GameGUI(tk.Tk):
     IMAGE_WIDTH = 600
@@ -282,11 +252,18 @@ class GameGUI(tk.Tk):
         self.minsize(900, 650)
 
         self.game = Game()
-
         name = simpledialog.askstring("Nom", "Entrez votre nom:", parent=self)
-        if not name:
-            name = "Joueur"
+        if not name: name = "Joueur"
         self.game.setup(player_name=name)
+
+        # Initialisation sécurisée des variables d'images à None
+        self._image_ref = None
+        self._btn_help = None
+        self._btn_up = None
+        self._btn_down = None
+        self._btn_left = None
+        self._btn_right = None
+        self._btn_quit = None
 
         self._build_layout()
 
@@ -314,12 +291,11 @@ class GameGUI(tk.Tk):
         self.canvas = tk.Canvas(image_frame, width=self.IMAGE_WIDTH, height=self.IMAGE_HEIGHT, bg="#222")
         self.canvas.pack(fill="both", expand=True)
 
-        self._image_ref = None
-
         buttons_frame = ttk.Frame(top_frame)
         buttons_frame.grid(row=0, column=1, sticky="ne")
         buttons_frame.grid_columnconfigure(0, weight=1)
 
+        # --- CHARGEMENT SÉCURISÉ DES IMAGES ---
         assets_dir = Path(__file__).parent / 'assets'
         try:
             self._btn_help = tk.PhotoImage(file=str(assets_dir / 'help-50.png'))
@@ -328,25 +304,44 @@ class GameGUI(tk.Tk):
             self._btn_left = tk.PhotoImage(file=str(assets_dir / 'left-arrow-50.png'))
             self._btn_right = tk.PhotoImage(file=str(assets_dir / 'right-arrow-50.png'))
             self._btn_quit = tk.PhotoImage(file=str(assets_dir / 'quit-50.png'))
-        except:
-            print("Erreur: Images des boutons non trouvées dans assets/")
-            self._btn_help = None # Fallback logic could be added here
+        except Exception as e:
+            print(f"ATTENTION : Images non trouvées ({e}). Utilisation du mode texte.")
+            # Les variables restent à None, on gérera l'affichage plus bas
 
-        tk.Button(buttons_frame, image=self._btn_help, command=lambda: self._send_command("help"), bd=0).grid(row=0, column=0, sticky="ew", pady=2)
+        # --- CRÉATION DES BOUTONS (IMAGE OU TEXTE) ---
+       
+        # Bouton Aide
+        if self._btn_help:
+            tk.Button(buttons_frame, image=self._btn_help, command=lambda: self._send_command("help"), bd=0).grid(row=0, column=0, sticky="ew", pady=2)
+        else:
+            tk.Button(buttons_frame, text="AIDE (?)", command=lambda: self._send_command("help")).grid(row=0, column=0, sticky="ew", pady=2)
        
         move_frame = ttk.LabelFrame(buttons_frame, text="Déplacements")
         move_frame.grid(row=1, column=0, sticky="ew", pady=4)
-        tk.Button(move_frame, image=self._btn_up, command=lambda: self._send_command("go N"), bd=0).grid(row=0, column=0, columnspan=2)
-        tk.Button(move_frame, image=self._btn_left, command=lambda: self._send_command("go O"), bd=0).grid(row=1, column=0)
-        tk.Button(move_frame, image=self._btn_right, command=lambda: self._send_command("go E"), bd=0).grid(row=1, column=1)
-        tk.Button(move_frame, image=self._btn_down, command=lambda: self._send_command("go S"), bd=0).grid(row=2, column=0, columnspan=2)
 
-        # Ajout Boutons Spéciaux (Haut/Bas/Quêtes)
+        # Boutons de direction avec sécurité
+        if self._btn_up:
+            tk.Button(move_frame, image=self._btn_up, command=lambda: self._send_command("go N"), bd=0).grid(row=0, column=0, columnspan=2)
+            tk.Button(move_frame, image=self._btn_left, command=lambda: self._send_command("go O"), bd=0).grid(row=1, column=0)
+            tk.Button(move_frame, image=self._btn_right, command=lambda: self._send_command("go E"), bd=0).grid(row=1, column=1)
+            tk.Button(move_frame, image=self._btn_down, command=lambda: self._send_command("go S"), bd=0).grid(row=2, column=0, columnspan=2)
+        else:
+            # Mode texte si pas d'images
+            tk.Button(move_frame, text="Nord", command=lambda: self._send_command("go N")).grid(row=0, column=0, columnspan=2, sticky="ew")
+            tk.Button(move_frame, text="Ouest", command=lambda: self._send_command("go O")).grid(row=1, column=0, sticky="ew")
+            tk.Button(move_frame, text="Est", command=lambda: self._send_command("go E")).grid(row=1, column=1, sticky="ew")
+            tk.Button(move_frame, text="Sud", command=lambda: self._send_command("go S")).grid(row=2, column=0, columnspan=2, sticky="ew")
+
+        # Boutons Spéciaux (Haut/Bas/Quêtes) - Toujours texte
         tk.Button(buttons_frame, text="Monter", command=lambda: self._send_command("go H")).grid(row=2, column=0, sticky="ew")
         tk.Button(buttons_frame, text="Descendre", command=lambda: self._send_command("go B")).grid(row=3, column=0, sticky="ew")
         tk.Button(buttons_frame, text="Quêtes", command=lambda: self._send_command("quetes")).grid(row=4, column=0, sticky="ew", pady=5)
 
-        tk.Button(buttons_frame, image=self._btn_quit, command=lambda: self._send_command("quit"), bd=0).grid(row=5, column=0, sticky="ew", pady=(8,2))
+        # Bouton Quitter
+        if self._btn_quit:
+            tk.Button(buttons_frame, image=self._btn_quit, command=lambda: self._send_command("quit"), bd=0).grid(row=5, column=0, sticky="ew", pady=(8,2))
+        else:
+            tk.Button(buttons_frame, text="QUITTER", command=lambda: self._send_command("quit")).grid(row=5, column=0, sticky="ew", pady=(8,2))
 
         output_frame = ttk.Frame(self)
         output_frame.grid(row=1, column=0, sticky="nsew", padx=6, pady=3)
@@ -376,18 +371,21 @@ class GameGUI(tk.Tk):
         room = self.game.player.current_room
         assets_dir = Path(__file__).parent / 'assets'
 
+        image_path = assets_dir / 'scene.png'
         if room.image:
-            image_path = assets_dir / room.image
-        else:
-            image_path = assets_dir / 'scene.png'
+            potential_path = assets_dir / room.image
+            if potential_path.exists():
+                image_path = potential_path
 
         try:
             self._image_ref = tk.PhotoImage(file=str(image_path))
             self.canvas.delete("all")
             self.canvas.create_image(self.IMAGE_WIDTH/2, self.IMAGE_HEIGHT/2, image=self._image_ref)
-        except (FileNotFoundError, tk.TclError):
+        except Exception:
             self.canvas.delete("all")
-            self.canvas.create_text(self.IMAGE_WIDTH/2, self.IMAGE_HEIGHT/2, text=f"Image: {room.name}", fill="white", font=("Helvetica", 18))
+            # Fallback textuel dans le canvas si l'image de la salle manque aussi
+            self.canvas.create_text(self.IMAGE_WIDTH/2, self.IMAGE_HEIGHT/2, text=f"Lieu : {room.name}", fill="white", font=("Helvetica", 18))
+            self.canvas.create_text(self.IMAGE_WIDTH/2, self.IMAGE_HEIGHT/2 + 30, text="(Image non trouvée)", fill="gray", font=("Helvetica", 10))
 
     def _on_enter(self, _event=None):
         value = self.entry_var.get().strip()
@@ -400,11 +398,7 @@ class GameGUI(tk.Tk):
             return
         print(f"> {command}\n")
         self.game.process_command(command)
-       
-        # --- IMPORTANT : Bouger les NPCs et Check Victoire après chaque commande ---
         self.game._on_turn_end()
-        # ---------------------------------------------------------------------------
-
         self._update_room_image()
         if self.game.finished:
             self.entry.configure(state="disabled")
@@ -413,7 +407,6 @@ class GameGUI(tk.Tk):
     def _on_close(self):
         sys.stdout = self.original_stdout
         self.destroy()
-
 
 def main():
     args = sys.argv[1:]
